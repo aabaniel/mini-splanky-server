@@ -1,0 +1,68 @@
+'''
+Uploading Logs: INGEST <file_path> <IP_or_DNS>:<Port>
+Querying by Date: QUERY <IP_or_DNS>:<Port> SEARCH_DATE "<date_string>"
+Querying by Host: QUERY <IP_or_DNS>:<Port> SEARCH_HOST <hostname>
+Querying by Daemon: QUERY <IP_or_DNS>:<Port> SEARCH_DAEMON <daemon_name>
+Querying by Severity: QUERY <IP_or_DNS>:<Port> SEARCH_SEVERITY <severity_level>
+Keyword Search: QUERY <IP_or_DNS>:<Port> SEARCH_KEYWORD <keyword>
+Keyword Count: QUERY <IP_or_DNS>:<Port> COUNT_KEYWORD <keyword>
+Erasing Data: PURGE <IP_or_DNS>:<Port>
+'''
+
+
+# client.py
+import socket
+
+def run_client():
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.connect((HOST, PORT))
+                
+            while True:
+                
+                client.send(cmd.encode())
+
+                response = client.recv(4096).decode()
+                print("Server response:\n", response)
+                client.close()
+
+HOST = '192.168.1.11'  # change to server IP if remote
+PORT = 11017
+
+print("Welcome, Use INGEST Or PURGE to connect to the server.")
+print("Type 'HELP' to see available commands")
+
+while True:
+    cmd = input("Enter command: ")
+    if cmd == "INGEST":
+        run_client()
+
+    elif cmd == "PURGE":
+        run_client()
+
+    elif cmd == "HELP":
+            print("List of Commands:")
+            print("================================================")
+            print("INGEST <FILE_PATH> <SERVER_IP>:<SERVER_PORT>")
+            print("Usage: Read file path, and send to server for parsing")
+            print("================================================")
+            print("PURGE <SERVER_IP>:<SERVER_PORT>")
+            print("Usage: Deletes log files from the server")
+            print("================================================")
+            print("HELP")
+            print("Usage: Display all possible commands")
+            print("================================================")
+            print("EXIT")
+            print("Usage: Close Program")
+            print("================================================")
+
+
+    elif cmd == "EXIT":
+          print("Closing Program")
+          break
+    
+
+
+
+
+
+
