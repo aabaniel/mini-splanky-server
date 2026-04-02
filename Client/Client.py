@@ -56,7 +56,7 @@ while True:
         run_client(cmd, server_ip, server_port)
 
     elif len(parts) == 2 and parts[0] == "PURGE":
-        server = parts[2]
+        server = parts[1]
         server_ip, server_port = server.split(":")
         server_port = int(server_port)
         run_client(cmd, server_ip, server_port)
