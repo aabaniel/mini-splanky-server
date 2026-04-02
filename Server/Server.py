@@ -84,7 +84,7 @@ def handle_client(conn, addr):
                         
 
    
-                elif command == "purge":
+                elif command == "PURGE":
                     purge()
 
      

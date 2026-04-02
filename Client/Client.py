@@ -55,8 +55,11 @@ while True:
 
         run_client(cmd, server_ip, server_port)
 
-    elif cmd == "PURGE":
-        run_client()
+    elif len(parts) == 2 and parts[0] == "PURGE":
+        server = parts[2]
+        server_ip, server_port = server.split(":")
+        server_port = int(server_port)
+        run_client(cmd, server_ip, server_port)
 
     elif cmd == "HELP":
             print("List of Commands:")
