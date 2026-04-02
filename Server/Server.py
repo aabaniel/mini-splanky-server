@@ -7,7 +7,8 @@ PORT = 11017
 
 connected_ips = []
 
-from cmd.purge import purge
+from cmd import purge
+import re
 
 def handle_client(conn, addr):
     print(f"[CLIENT THREAD STARTED] {addr}")
@@ -52,6 +53,34 @@ def handle_client(conn, addr):
                         argument = " ".join(cmd_parts[1:])
                         response = f"INGESTED: {argument}"
 
+                        header, _, file_text = data.partition("\n")
+                        parts = header.strip().split()
+
+                        if len(parts) != 3:
+                            response = "Correct Usage: INGEST <file_path> <server_ip:port> + newline + file content"
+                        else:
+                            target = parts[2]
+                            try:
+                                server_ip, server_port_raw = target.rsplit(":", 1)
+                                server_port = int(server_port_raw)
+                            except ValueError:
+                                response = "Invalid target. Use <server_ip:port>."
+                            else:
+                                pattern = re.compile(
+                                    r'^(?P<month>\w{3})\s+(?P<day>\d{1,2})\s+(?P<time>\d{2}:\d{2}:\d{2})\s+'
+                                    r'(?P<host>\S+)\s+(?P<service>[^\[:]+)(?:\[(?P<pid>\d+)\])?:\s(?P<message>.*)$'
+                                )
+
+                                parsed_logs = []
+                                for line in file_text.splitlines():
+                                    match = pattern.match(line)
+                                    if match:
+                                        parsed_logs.append(match.groupdict())
+
+                                response = (
+                                    f"INGEST complete for {server_ip}:{server_port}. "
+                                    f"Parsed {len(parsed_logs)} log line(s)."
+                                )
                         
 
    

@@ -38,8 +38,20 @@ while True:
         server = parts[2]
         server_ip, server_port = server.split(":")
         server_port = int(server_port)
-        #filepath & send big block of text to server
-        
+        file_path = parts[1]
+
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+                file_text = f.read()
+        except FileNotFoundError:
+            print(f"File not found: {file_path}")
+            continue
+        except OSError as e:
+            print(f"Failed to read file: {e}")
+            continue
+
+        # Send command header + full file content as one payload
+        cmd = f"{cmd}\n{file_text}"
 
         run_client(cmd, server_ip, server_port)
 
