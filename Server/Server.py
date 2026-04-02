@@ -7,7 +7,7 @@ PORT = 11017
 
 connected_ips = []
 
-from cmd import purge
+from cmd.purge import purge
 import re
 
 def handle_client(conn, addr):
@@ -85,7 +85,9 @@ def handle_client(conn, addr):
 
    
                 elif command == "PURGE":
-                    purge()
+                    response = purge()
+                    conn.send(response.encode())
+                    break
 
      
 

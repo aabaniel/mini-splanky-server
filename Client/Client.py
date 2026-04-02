@@ -14,17 +14,19 @@ Erasing Data: PURGE <IP_or_DNS>:<Port>
 import socket
 
 def run_client(cmd, HOST, PORT):
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client.connect((HOST, PORT))
-                
-            while True:
-                
-                client.send(cmd.encode())
-
-                response = client.recv(4096).decode()
-                print("Server response:\n", response)
-                client.close()
-
+ 
+    try:
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.connect((HOST, PORT))
+        client.send(cmd.encode())
+        response = client.recv(4096).decode()
+        print("Server response:\n", response)
+    except ConnectionRefusedError:
+        print(f"Cannot connect to {HOST}:{PORT}")
+    except OSError as e:
+        print(f"Socket error: {e}")
+    finally:
+        client.close()
 
 
 print("Welcome, Use INGEST Or PURGE to connect to the server.")

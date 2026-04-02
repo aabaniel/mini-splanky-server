@@ -1,2 +1,2 @@
 def purge():
-    print("you call purge congrats")
+    return f"ME WHEN I PURGE IT"
