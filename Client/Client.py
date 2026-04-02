@@ -13,7 +13,7 @@ Erasing Data: PURGE <IP_or_DNS>:<Port>
 # client.py
 import socket
 
-def run_client():
+def run_client(cmd, HOST, PORT):
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client.connect((HOST, PORT))
                 
@@ -25,16 +25,23 @@ def run_client():
                 print("Server response:\n", response)
                 client.close()
 
-HOST = '192.168.1.11'  # change to server IP if remote
-PORT = 11017
+
 
 print("Welcome, Use INGEST Or PURGE to connect to the server.")
 print("Type 'HELP' to see available commands")
 
 while True:
     cmd = input("Enter command: ")
-    if cmd == "INGEST":
-        run_client()
+    parts = cmd.split()
+
+    if len(parts) == 3 and parts[0] == "INGEST":
+        server = parts[2]
+        server_ip, server_port = server.split(":")
+        server_port = int(server_port)
+        #filepath & send big block of text to server
+        
+
+        run_client(cmd, server_ip, server_port)
 
     elif cmd == "PURGE":
         run_client()

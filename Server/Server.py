@@ -33,7 +33,7 @@ def handle_client(conn, addr):
                 response = "Empty command"
 
             else:
-                command = cmd_parts[0].lower()
+                command = cmd_parts[0]
 
                 
                 if command == "ping":
@@ -46,7 +46,7 @@ def handle_client(conn, addr):
                 
 
                 elif command == "INGEST":
-                    if len(cmd_parts) < 2:
+                    if len(cmd_parts) < 3:
                         response = "Correct Usage: INGEST <argument>"
                     else:
                         argument = " ".join(cmd_parts[1:])
