@@ -7,7 +7,7 @@ PORT = 11017
 
 connected_ips = []
 
-
+from cmd.purge import purge
 
 def handle_client(conn, addr):
     print(f"[CLIENT THREAD STARTED] {addr}")
@@ -56,11 +56,7 @@ def handle_client(conn, addr):
 
    
                 elif command == "purge":
-                    if len(cmd_parts) < 2:
-                        response = "Correct Usage: PURGE <argument>"
-                    else:
-                        argument = " ".join(cmd_parts[1:])
-                        response = f"PURGED: {argument}"
+                    purge()
 
      
 
