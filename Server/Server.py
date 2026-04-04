@@ -14,10 +14,11 @@ class SyslogEntry:
 #datetime basis "abbr. name  day of month  hour:minute:seconds" "%b %d %H:%M:%S"
 
 
+
 HOST = '0.0.0.0'
 PORT = 11017
 
-
+global syslog_entries 
 connected_ips = []
 syslog_entries = []
 
@@ -130,8 +131,7 @@ def handle_client(conn, addr):
                                         if match:
                                             parsed_logs.append(match.groupdict())
 
-                                    global syslog_entries 
-                                    syslog_entries = []
+  
                                     current_year = datetime.now().year
 
                                     for item in parsed_logs:
@@ -180,11 +180,16 @@ def handle_client(conn, addr):
                     else:
                         try:
                             count = len(syslog_entries)
-                            syslog_entries.clear()
-                            response = f"Server successfully purged, {count} log entries deleted."
+                            if count == 0:
+                                response = f"Nothing to purge, {count} log entries in server."
+                            else:
+                                syslog_entries.clear()
+                                response = f"Server successfully purged, {count} log entries deleted."
                         finally:
                             purge_semaphore.release()
 
+
+               
                 else:
                     response = f"Unknown command: {command}"
 
@@ -196,12 +201,7 @@ def handle_client(conn, addr):
                     break
                 raise
 
-        except OSError as e:
-            if getattr(e, "winerror", None) in (10053, 10054):
-                print(f"[DISCONNECT] {addr}: {e}")
-                break
-            print(f"[ERROR] {addr}: {e}")
-            break
+
         except Exception as e:
             print(f"[ERROR] {addr}: {e}")
             break
@@ -221,6 +221,7 @@ def connection_handler(server):
         global client_thread 
         client_thread = threading.Thread(target=handle_client,args=(conn, addr))
         client_thread.start() 
+        client_thread.join()
 
 
 def start_server():

@@ -30,7 +30,7 @@ def run_client(cmd, HOST, PORT):
 
 def start_client():
 
-    print("Welcome, Use INGEST Or PURGE to connect to the server.")
+    print("Welcome")
     print("Type 'HELP' to see available commands")
 
     while True:
