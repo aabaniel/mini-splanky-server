@@ -11,6 +11,8 @@ connected_ips = []
 
 import re
 
+ingest_semaphore = threading.Semaphore(1)
+
 @dataclass
 class client:
     Client_IP: str
@@ -57,58 +59,68 @@ def handle_client(conn, addr):
 ###################################################################
 
                 elif command == "INGEST":
-                    # Supports up to 200,000 KB (204,800,000 bytes)
-                    MAX_INGEST_BYTES = 200000 * 1024
-                    CHUNK_SIZE = 65536
+                    
+                    if not ingest_semaphore.acquire(blocking=False):
+                        response = f"Server currently busy, Please wait... "
+                        conn.send(response.encode())
+                        break
+                       
 
-                    raw_buffer = bytearray(data.encode("utf-8", errors="replace"))
-
-                    # Continue reading remaining payload chunks for large ingest bodies
-                    conn.settimeout(0.2)
+                   
                     try:
-                        while len(raw_buffer) < MAX_INGEST_BYTES:
-                            chunk = conn.recv(min(CHUNK_SIZE, MAX_INGEST_BYTES - len(raw_buffer)))
-                            if not chunk:
-                                break
-                            raw_buffer.extend(chunk)
-                    except socket.timeout:
-                        pass
-                    finally:
-                        conn.settimeout(None)
+                        # Supports up to 200,000 KB (204,800,000 bytes)
+                        MAX_INGEST_BYTES = 200000 * 1024
+                        CHUNK_SIZE = 65536
 
-                    if len(raw_buffer) >= MAX_INGEST_BYTES:
-                        response = f"Payload too large. Max allowed is {MAX_INGEST_BYTES} bytes."
-                    else:
-                        full_data = raw_buffer.decode("utf-8", errors="replace")
-                        header, _, file_text = full_data.partition("\n")
-                        parts = header.strip().split()
+                        raw_buffer = bytearray(data.encode("utf-8", errors="replace"))
 
-                        if len(parts) != 3:
-                            response = "Correct Usage: INGEST <file_path> <server_ip:port> + newline + file content"
+                        # Continue reading remaining payload chunks for large ingest bodies
+                        conn.settimeout(0.2)
+                        try:
+                            while len(raw_buffer) < MAX_INGEST_BYTES:
+                                chunk = conn.recv(min(CHUNK_SIZE, MAX_INGEST_BYTES - len(raw_buffer)))
+                                if not chunk:
+                                    break
+                                raw_buffer.extend(chunk)
+                        except socket.timeout:
+                            pass
+                        finally:
+                            conn.settimeout(None)
+
+                        if len(raw_buffer) >= MAX_INGEST_BYTES:
+                            response = f"Payload too large. Max allowed is {MAX_INGEST_BYTES} bytes."
                         else:
-                            target = parts[2]
-                            try:
-                                server_ip, server_port_raw = target.rsplit(":", 1)
-                                server_port = int(server_port_raw)
-                            except ValueError:
-                                response = "Invalid target. Use <server_ip:port>."
+                            full_data = raw_buffer.decode("utf-8", errors="replace")
+                            header, _, file_text = full_data.partition("\n")
+                            parts = header.strip().split()
+
+                            if len(parts) != 3:
+                                response = "Correct Usage: INGEST <file_path> <server_ip:port> + newline + file content"
                             else:
-                                pattern = re.compile(
-                                    r'^(?P<month>\w{3})\s+(?P<day>\d{1,2})\s+(?P<time>\d{2}:\d{2}:\d{2})\s+'
-                                    r'(?P<host>\S+)\s+(?P<service>[^\[:]+)(?:\[(?P<pid>\d+)\])?:\s(?P<message>.*)$'
-                                )
+                                target = parts[2]
+                                try:
+                                    server_ip, server_port_raw = target.rsplit(":", 1)
+                                    server_port = int(server_port_raw)
+                                except ValueError:
+                                    response = "Invalid target. Use <server_ip:port>."
+                                else:
+                                    pattern = re.compile(
+                                        r'^(?P<month>\w{3})\s+(?P<day>\d{1,2})\s+(?P<time>\d{2}:\d{2}:\d{2})\s+'
+                                        r'(?P<host>\S+)\s+(?P<service>[^\[:]+)(?:\[(?P<pid>\d+)\])?:\s(?P<message>.*)$'
+                                    )
 
-                                parsed_logs = []
-                                for line in file_text.splitlines():
-                                    match = pattern.match(line)
-                                    if match:
-                                        parsed_logs.append(match.groupdict())
+                                    parsed_logs = []
+                                    for line in file_text.splitlines():
+                                        match = pattern.match(line)
+                                        if match:
+                                            parsed_logs.append(match.groupdict())
 
-                                response = (
-                                    f"INGEST complete for {server_ip}:{server_port}. "
-                                    f"Parsed {len(parsed_logs)} log line(s)."
-                                )
-                        
+                                    response = (
+                                        f"INGEST complete for {server_ip}:{server_port}. "
+                                        f"Parsed {len(parsed_logs)} log line(s)."
+                                    )
+                    finally:
+                        ingest_semaphore.release()
 ###################################################################
    
                 elif command == "PURGE":
