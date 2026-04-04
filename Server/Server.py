@@ -24,6 +24,8 @@ connected_ips = []
 import re
 
 ingest_semaphore = threading.Semaphore(1)
+query_semaphore = threading.Semaphore(1)
+purge_semaphore = threading.Semaphore(1)
 
 @dataclass
 class client:
@@ -73,7 +75,7 @@ def handle_client(conn, addr):
                 elif command == "INGEST":
                     
                     if not ingest_semaphore.acquire(blocking=False):
-                        response = f"Server currently busy, Please wait... "
+                        response = f"Server currently writing to memory, try again later. "
                         conn.send(response.encode())
                         break
                        
@@ -127,6 +129,7 @@ def handle_client(conn, addr):
                                         if match:
                                             parsed_logs.append(match.groupdict())
 
+                                    global syslog_entries 
                                     syslog_entries = []
                                     current_year = datetime.now().year
 
@@ -170,11 +173,22 @@ def handle_client(conn, addr):
 ###################################################################
    
                 elif command == "PURGE":
-                    response = f"me when i purge"
-                    conn.send(response.encode())
-                    break
 
-     
+                    if not purge_semaphore.acquire(blocking=False):
+                        response = f"Server currently being purged, try again later. "
+                        conn.send(response.encode())
+                        
+                    try:
+                        count = len(syslog_entries)
+                        syslog_entries.clear()
+                        response = f"Server successfully purged, {count} log entries deleted."
+                        conn.send(response.encode())
+                    
+                    finally:
+                        purge_semaphore.release()
+
+
+
 
                 else:
                     response = f"Unknown command: {command}"
@@ -187,6 +201,7 @@ def handle_client(conn, addr):
 
     conn.close()
     print(f"[DISCONNECTED] {addr}")
+    connected_ips.pop()
 
 
 def connection_handler(server):
