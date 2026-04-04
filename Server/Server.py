@@ -1,6 +1,18 @@
 from dataclasses import dataclass
+from datetime import datetime
 import socket
 import threading
+
+@dataclass
+class SyslogEntry:
+    severity:str
+    timestamp:datetime
+    hostname:str
+    daemon:str
+    message:str
+
+#datetime basis "abbr. name  day of month  hour:minute:seconds" "%b %d %H:%M:%S"
+
 
 HOST = '0.0.0.0'
 PORT = 11017
@@ -114,6 +126,40 @@ def handle_client(conn, addr):
                                         match = pattern.match(line)
                                         if match:
                                             parsed_logs.append(match.groupdict())
+
+                                    syslog_entries = []
+                                    current_year = datetime.now().year
+
+                                    for item in parsed_logs:
+                                        ts = datetime.strptime(
+                                            f"{item['month']} {item['day']} {item['time']}",
+                                            "%b %d %H:%M:%S"
+                                        ).replace(year=current_year)
+
+                                        msg = item.get("message", "")
+                                        msg_l = msg.lower()
+                                        if "critical" in msg_l or "fatal" in msg_l:
+                                            sev = "CRITICAL"
+                                        elif "error" in msg_l or "fail" in msg_l:
+                                            sev = "ERROR"
+                                        elif "warn" in msg_l:
+                                            sev = "WARNING"
+                                        elif "debug" in msg_l:
+                                            sev = "DEBUG"
+                                        else:
+                                            sev = "INFO"
+
+                                        syslog_entries.append(
+                                            SyslogEntry(
+                                                severity=sev,
+                                                timestamp=ts,
+                                                hostname=item["host"],
+                                                daemon=item["service"].strip(),
+                                                message=msg
+                                            )
+                                        )
+
+
 
                                     response = (
                                         f"INGEST complete for {server_ip}:{server_port}. "
