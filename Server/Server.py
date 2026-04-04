@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import socket
 import threading
 
@@ -7,8 +8,15 @@ PORT = 11017
 
 connected_ips = []
 
-#from cmd.purge import purge
+
 import re
+
+@dataclass
+class client:
+    Client_IP: str
+    Port_Used: int
+
+
 
 def handle_client(conn, addr):
     print(f"[CLIENT THREAD STARTED] {addr}")
@@ -104,7 +112,7 @@ def handle_client(conn, addr):
 ###################################################################
    
                 elif command == "PURGE":
-                    #response = purge()
+                    response = f"me when i purge"
                     conn.send(response.encode())
                     break
 
