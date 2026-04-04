@@ -59,9 +59,7 @@ def handle_client(conn, addr):
                     conn.settimeout(0.2)
                     try:
                         while len(raw_buffer) < MAX_INGEST_BYTES:
-                            
                             chunk = conn.recv(min(CHUNK_SIZE, MAX_INGEST_BYTES - len(raw_buffer)))
-                            response = f"Ingesting {file_text}"
                             if not chunk:
                                 break
                             raw_buffer.extend(chunk)
