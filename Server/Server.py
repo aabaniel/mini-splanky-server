@@ -7,7 +7,7 @@ PORT = 11017
 
 connected_ips = []
 
-from cmd.purge import purge
+#from cmd.purge import purge
 import re
 
 def handle_client(conn, addr):
@@ -59,7 +59,9 @@ def handle_client(conn, addr):
                     conn.settimeout(0.2)
                     try:
                         while len(raw_buffer) < MAX_INGEST_BYTES:
+                            
                             chunk = conn.recv(min(CHUNK_SIZE, MAX_INGEST_BYTES - len(raw_buffer)))
+                            response = f"Ingesting {file_text}"
                             if not chunk:
                                 break
                             raw_buffer.extend(chunk)
@@ -104,7 +106,7 @@ def handle_client(conn, addr):
 ###################################################################
    
                 elif command == "PURGE":
-                    response = purge()
+                    #response = purge()
                     conn.send(response.encode())
                     break
 
