@@ -19,6 +19,7 @@ PORT = 11017
 
 
 connected_ips = []
+syslog_entries = []
 
 
 import re
@@ -37,14 +38,14 @@ class client:
 def handle_client(conn, addr):
     print(f"[CLIENT THREAD STARTED] {addr}")
 
-    ip = addr[1]
+    ip = addr[0]
 
 
     if ip not in connected_ips:
          connected_ips.append(ip)
 
     print(f"[CONNECTED] {addr}")
-    print(f"[IP LIST] {connected_ips}")
+    print(f"[CLIENT PORT LIST] {[addr[1]]}")
 
     while True:
         try:
@@ -176,32 +177,39 @@ def handle_client(conn, addr):
 
                     if not purge_semaphore.acquire(blocking=False):
                         response = f"Server currently being purged, try again later. "
-                        conn.send(response.encode())
-                        
-                    try:
-                        count = len(syslog_entries)
-                        syslog_entries.clear()
-                        response = f"Server successfully purged, {count} log entries deleted."
-                        conn.send(response.encode())
-                    
-                    finally:
-                        purge_semaphore.release()
-
-
-
+                    else:
+                        try:
+                            count = len(syslog_entries)
+                            syslog_entries.clear()
+                            response = f"Server successfully purged, {count} log entries deleted."
+                        finally:
+                            purge_semaphore.release()
 
                 else:
                     response = f"Unknown command: {command}"
 
-            conn.send(response.encode())
+            try:
+                conn.send(response.encode())
+            except OSError as e:
+                if getattr(e, "winerror", None) in (10053, 10054):
+                    print(f"[DISCONNECT] {addr}: {e}")
+                    break
+                raise
 
+        except OSError as e:
+            if getattr(e, "winerror", None) in (10053, 10054):
+                print(f"[DISCONNECT] {addr}: {e}")
+                break
+            print(f"[ERROR] {addr}: {e}")
+            break
         except Exception as e:
             print(f"[ERROR] {addr}: {e}")
             break
 
     conn.close()
     print(f"[DISCONNECTED] {addr}")
-    connected_ips.pop()
+    if ip in connected_ips:
+        connected_ips.remove(ip)
 
 
 def connection_handler(server):
@@ -210,8 +218,9 @@ def connection_handler(server):
     while True:
         conn, addr = server.accept()
 
+        global client_thread 
         client_thread = threading.Thread(target=handle_client,args=(conn, addr))
-        client_thread.start()
+        client_thread.start() 
 
 
 def start_server():
@@ -222,7 +231,7 @@ def start_server():
     print(f"Server listening on {HOST}:{PORT}...")
 
     accept_thread = threading.Thread(
-        target=connection_handler,
+        target=connection_handler, 
         args=(server,)
     )
     accept_thread.start()
@@ -234,3 +243,5 @@ def start_server():
 
 
 start_server()
+#INGEST SVR1_server_auth_syslog.txt IP:11017
+#INGEST SVR2_server_auth_syslog.txt IP:11017
