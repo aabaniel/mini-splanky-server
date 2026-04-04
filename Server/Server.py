@@ -24,7 +24,7 @@ def handle_client(conn, addr):
 
     while True:
         try:
-            data = conn.recv(1024).decode()
+            data = conn.recv(1024).decode() # controls total data gathered
 
             if not data:
                 break
@@ -46,14 +46,33 @@ def handle_client(conn, addr):
                     break
                 
 
-                elif command == "INGEST":
-                    if len(cmd_parts) < 3:
-                        response = "Correct Usage: INGEST <argument>"
-                    else:
-                        argument = " ".join(cmd_parts[1:])
-                        response = f"INGESTED: {argument}"
+###################################################################
 
-                        header, _, file_text = data.partition("\n")
+                elif command == "INGEST":
+                    # Supports up to 200,000 KB (204,800,000 bytes)
+                    MAX_INGEST_BYTES = 200000 * 1024
+                    CHUNK_SIZE = 65536
+
+                    raw_buffer = bytearray(data.encode("utf-8", errors="replace"))
+
+                    # Continue reading remaining payload chunks for large ingest bodies
+                    conn.settimeout(0.2)
+                    try:
+                        while len(raw_buffer) < MAX_INGEST_BYTES:
+                            chunk = conn.recv(min(CHUNK_SIZE, MAX_INGEST_BYTES - len(raw_buffer)))
+                            if not chunk:
+                                break
+                            raw_buffer.extend(chunk)
+                    except socket.timeout:
+                        pass
+                    finally:
+                        conn.settimeout(None)
+
+                    if len(raw_buffer) >= MAX_INGEST_BYTES:
+                        response = f"Payload too large. Max allowed is {MAX_INGEST_BYTES} bytes."
+                    else:
+                        full_data = raw_buffer.decode("utf-8", errors="replace")
+                        header, _, file_text = full_data.partition("\n")
                         parts = header.strip().split()
 
                         if len(parts) != 3:
@@ -82,7 +101,7 @@ def handle_client(conn, addr):
                                     f"Parsed {len(parsed_logs)} log line(s)."
                                 )
                         
-
+###################################################################
    
                 elif command == "PURGE":
                     response = purge()
