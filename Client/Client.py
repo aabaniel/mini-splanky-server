@@ -12,6 +12,7 @@ Erasing Data: PURGE <IP_or_DNS>:<Port>
 
 # client.py
 import socket
+import shlex
 
 def run_client(cmd, HOST, PORT):
  
@@ -63,6 +64,48 @@ def start_client():
             server_ip, server_port = server.split(":")
             server_port = int(server_port)
             run_client(cmd, server_ip, server_port)
+
+        elif len(parts) == 4 and parts[0] == "QUERY":
+            try:
+                qparts = shlex.split(cmd.strip())
+            except ValueError:
+                print("Invalid QUERY syntax.")
+                continue
+
+            if len(qparts) < 4:
+                print(
+                    "Correct Usage: QUERY <IP_or_DNS>:<Port> "
+                    "<SEARCH_DATE|SEARCH_HOST|SEARCH_DAEMON|SEARCH_SEVERITY|SEARCH_KEYWORD|COUNT_KEYWORD> <value>"
+                )
+                continue
+
+            target = qparts[1]
+            qtype = qparts[2].upper()
+            valid_qtypes = {
+                "SEARCH_DATE",
+                "SEARCH_HOST",
+                "SEARCH_DAEMON",
+                "SEARCH_SEVERITY",
+                "SEARCH_KEYWORD",
+                "COUNT_KEYWORD",
+            }
+
+            try:
+                server_ip, server_port = target.rsplit(":", 1)
+                server_port = int(server_port)
+            except ValueError:
+                print("Invalid target. Use <IP_or_DNS>:<Port>.")
+                continue
+
+            if qtype not in valid_qtypes:
+                print(
+                    f"Unknown QUERY type: {qtype}. "
+                    "Use SEARCH_DATE, SEARCH_HOST, SEARCH_DAEMON, SEARCH_SEVERITY, SEARCH_KEYWORD, or COUNT_KEYWORD."
+                )
+                continue
+
+            run_client(cmd, server_ip, server_port)
+
 
         elif cmd == "HELP":
                 print("List of Commands:")

@@ -24,6 +24,7 @@ syslog_entries = []
 
 
 import re
+import shlex
 
 ingest_semaphore = threading.Semaphore(1)
 query_semaphore = threading.Semaphore(1)
@@ -188,10 +189,124 @@ def handle_client(conn, addr):
                         finally:
                             purge_semaphore.release()
 
+###################################################################
 
-               
+                elif command == "QUERY":
+
+                    if not query_semaphore.acquire(blocking=False):
+                        response = "Server currently handling another query, try again later."
+                    else:
+                        try:
+                            try:
+                                qparts = shlex.split(data.strip())
+                            except ValueError:
+                                response = "Invalid QUERY syntax."
+                                qparts = []
+
+                            if qparts:
+                                # Expected:
+                                # QUERY <IP_or_DNS>:<Port> <SEARCH_DATE|SEARCH_HOST|SEARCH_DAEMON|SEARCH_SEVERITY|SEARCH_KEYWORD|COUNT_KEYWORD> <value>
+                                if len(qparts) < 4:
+                                    response = (
+                                        "Correct Usage: QUERY <IP_or_DNS>:<Port> "
+                                        "<SEARCH_DATE|SEARCH_HOST|SEARCH_DAEMON|SEARCH_SEVERITY|SEARCH_KEYWORD|COUNT_KEYWORD> <value>"
+                                    )
+                                else:
+                                    target = qparts[1]
+                                    qtype = qparts[2].upper()
+                                    qvalue = " ".join(qparts[3:]).strip()
+
+                                    try:
+                                        _, port_raw = target.rsplit(":", 1)
+                                        int(port_raw)
+                                    except ValueError:
+                                        response = "Invalid target. Use <IP_or_DNS>:<Port>."
+                                    if not syslog_entries:
+                                        response = "No indexed log entries to query."
+                                    else:
+                                        def fmt_entry(e: SyslogEntry) -> str:
+                                            ts = e.timestamp.strftime("%b %d %H:%M:%S")
+                                            return f"{ts} {e.hostname} {e.daemon}: {e.message}"
+
+                                        matches = []
+
+                                        if qtype == "SEARCH_DATE":
+                                            needle = qvalue.lower()
+                                            for e in syslog_entries:
+                                                ts = e.timestamp.strftime("%b %d %H:%M:%S").lower()
+                                                if ts.startswith(needle):
+                                                    matches.append(e)
+                                            if matches:
+                                                lines = [f"Found {len(matches)} matching entr{'y' if len(matches)==1 else 'ies'} for date '{qvalue}':"]
+                                                lines += [f"{i}. {fmt_entry(e)}" for i, e in enumerate(matches, 1)]
+                                                response = "\n".join(lines)
+                                            else:
+                                                response = f"No matching entries found for date '{qvalue}'."
+
+                                        elif qtype == "SEARCH_HOST":
+                                            for e in syslog_entries:
+                                                if e.hostname.lower() == qvalue.lower():
+                                                    matches.append(e)
+                                            if matches:
+                                                lines = [f"Found {len(matches)} matching entr{'y' if len(matches)==1 else 'ies'} for host '{qvalue}':"]
+                                                lines += [f"{i}. {fmt_entry(e)}" for i, e in enumerate(matches, 1)]
+                                                response = "\n".join(lines)
+                                            else:
+                                                response = f"No matching entries found for host '{qvalue}'."
+
+                                        elif qtype == "SEARCH_DAEMON":
+                                            for e in syslog_entries:
+                                                if e.daemon.lower() == qvalue.lower():
+                                                    matches.append(e)
+                                            if matches:
+                                                lines = [f"Found {len(matches)} matching entr{'y' if len(matches)==1 else 'ies'} for daemon '{qvalue}':"]
+                                                lines += [f"{i}. {fmt_entry(e)}" for i, e in enumerate(matches, 1)]
+                                                response = "\n".join(lines)
+                                            else:
+                                                response = f"No matching entries found for daemon '{qvalue}'."
+
+                                        elif qtype == "SEARCH_SEVERITY":
+                                            sev = qvalue.upper()
+                                            for e in syslog_entries:
+                                                if e.severity.upper() == sev:
+                                                    matches.append(e)
+                                            if matches:
+                                                lines = [f"Found {len(matches)} matching entr{'y' if len(matches)==1 else 'ies'} for severity '{sev}':"]
+                                                lines += [f"{i}. {fmt_entry(e)}" for i, e in enumerate(matches, 1)]
+                                                response = "\n".join(lines)
+                                            else:
+                                                response = f"No matching entries found for severity '{sev}'."
+
+                                        elif qtype == "SEARCH_KEYWORD":
+                                            needle = qvalue.lower()
+                                            for e in syslog_entries:
+                                                if needle in e.message.lower():
+                                                    matches.append(e)
+                                            if matches:
+                                                lines = [f"Found {len(matches)} matching entr{'y' if len(matches)==1 else 'ies'} for keyword '{qvalue}':"]
+                                                lines += [f"{i}. {fmt_entry(e)}" for i, e in enumerate(matches, 1)]
+                                                response = "\n".join(lines)
+                                            else:
+                                                response = f"No matching entries found for keyword '{qvalue}'."
+
+                                        elif qtype == "COUNT_KEYWORD":
+                                            needle = qvalue.lower()
+                                            count = sum(1 for e in syslog_entries if needle in e.message.lower())
+                                            response = f"The keyword '{qvalue}' appears in {count} indexed log entr{'y' if count==1 else 'ies'}."
+
+                                        else:
+                                            response = (
+                                                f"Unknown QUERY type: {qtype}. "
+                                                "Use SEARCH_DATE, SEARCH_HOST, SEARCH_DAEMON, SEARCH_SEVERITY, SEARCH_KEYWORD, or COUNT_KEYWORD."
+                                            )
+                        finally:
+                            query_semaphore.release()
+
+###################################################################
+
                 else:
                     response = f"Unknown command: {command}"
+
 
             try:
                 conn.send(response.encode())
