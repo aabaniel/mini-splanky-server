@@ -216,11 +216,6 @@ def handle_client(conn, addr):
                                     qtype = qparts[2].upper()
                                     qvalue = " ".join(qparts[3:]).strip()
 
-                                    try:
-                                        _, port_raw = target.rsplit(":", 1)
-                                        int(port_raw)
-                                    except ValueError:
-                                        response = "Invalid target. Use <IP_or_DNS>:<Port>."
                                     if not syslog_entries:
                                         response = "No indexed log entries to query."
                                     else:
@@ -229,6 +224,7 @@ def handle_client(conn, addr):
                                             return f"{ts} {e.hostname} {e.daemon}: {e.message}"
 
                                         matches = []
+                                        lines = []
 
                                         if qtype == "SEARCH_DATE":
                                             needle = qvalue.lower()
@@ -271,8 +267,19 @@ def handle_client(conn, addr):
                                                 if e.severity.upper() == sev:
                                                     matches.append(e)
                                             if matches:
-                                                lines = [f"Found {len(matches)} matching entr{'y' if len(matches)==1 else 'ies'} for severity '{sev}':"]
-                                                lines += [f"{i}. {fmt_entry(e)}" for i, e in enumerate(matches, 1)]
+                                                top_n = 10
+                                                bottom_n = 3
+
+                                                if len(matches) <= top_n + bottom_n:
+                                                    
+                                                    display_matches = matches
+                                                else:
+                                                    # top 10 + bottom 3
+                                                    display_matches = matches[:top_n] + matches[-bottom_n:]
+
+                                                for i, e in enumerate(display_matches, 1):
+                                                    lines.append(f"{i}. {fmt_entry(e)}")
+
                                                 response = "\n".join(lines)
                                             else:
                                                 response = f"No matching entries found for severity '{sev}'."
