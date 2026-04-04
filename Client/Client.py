@@ -28,62 +28,63 @@ def run_client(cmd, HOST, PORT):
     finally:
         client.close()
 
+def start_client():
 
-print("Welcome, Use INGEST Or PURGE to connect to the server.")
-print("Type 'HELP' to see available commands")
+    print("Welcome, Use INGEST Or PURGE to connect to the server.")
+    print("Type 'HELP' to see available commands")
 
-while True:
-    cmd = input("Enter command: ")
-    parts = cmd.split()
+    while True:
+        cmd = input("Enter command: ")
+        parts = cmd.split()
 
-    if len(parts) == 3 and parts[0] == "INGEST":
-        server = parts[2]
-        server_ip, server_port = server.split(":")
-        server_port = int(server_port)
-        file_path = parts[1]
+        if len(parts) == 3 and parts[0] == "INGEST":
+            server = parts[2]
+            server_ip, server_port = server.split(":")
+            server_port = int(server_port)
+            file_path = parts[1]
 
-        try:
-            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
-                file_text = f.read()
-        except FileNotFoundError:
-            print(f"File not found: {file_path}")
-            continue
-        except OSError as e:
-            print(f"Failed to read file: {e}")
-            continue
+            try:
+                with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+                    file_text = f.read()
+            except FileNotFoundError:
+                print(f"File not found: {file_path}")
+                continue
+            except OSError as e:
+                print(f"Failed to read file: {e}")
+                continue
 
-        # Send command header + full file content as one payload
-        cmd = f"{cmd}\n{file_text}"
+            # Send command header + full file content as one payload
+            cmd = f"{cmd}\n{file_text}"
 
-        run_client(cmd, server_ip, server_port)
+            run_client(cmd, server_ip, server_port)
 
-    elif len(parts) == 2 and parts[0] == "PURGE":
-        server = parts[1]
-        server_ip, server_port = server.split(":")
-        server_port = int(server_port)
-        run_client(cmd, server_ip, server_port)
+        elif len(parts) == 2 and parts[0] == "PURGE":
+            server = parts[1]
+            server_ip, server_port = server.split(":")
+            server_port = int(server_port)
+            run_client(cmd, server_ip, server_port)
 
-    elif cmd == "HELP":
-            print("List of Commands:")
-            print("================================================")
-            print("INGEST <FILE_PATH> <SERVER_IP>:<SERVER_PORT>")
-            print("Usage: Read file path, and send to server for parsing")
-            print("================================================")
-            print("PURGE <SERVER_IP>:<SERVER_PORT>")
-            print("Usage: Deletes log files from the server")
-            print("================================================")
-            print("HELP")
-            print("Usage: Display all possible commands")
-            print("================================================")
-            print("EXIT")
-            print("Usage: Close Program")
-            print("================================================")
+        elif cmd == "HELP":
+                print("List of Commands:")
+                print("================================================")
+                print("INGEST <FILE_PATH> <SERVER_IP>:<SERVER_PORT>")
+                print("Usage: Read file path, and send to server for parsing")
+                print("================================================")
+                print("PURGE <SERVER_IP>:<SERVER_PORT>")
+                print("Usage: Deletes log files from the server")
+                print("================================================")
+                print("HELP")
+                print("Usage: Display all possible commands")
+                print("================================================")
+                print("EXIT")
+                print("Usage: Close Program")
+                print("================================================")
 
 
-    elif cmd == "EXIT":
-          print("Closing Program")
-          break
-    
+        elif cmd == "EXIT":
+            print("Closing Program")
+            break
+        
 
 
 
