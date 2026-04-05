@@ -20,7 +20,9 @@ def run_client(cmd, HOST, PORT):
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client.connect((HOST, PORT))
         client.send(cmd.encode())
+        print("Connected to server, Server working...")
         response = client.recv(4096).decode()
+        print("============================================================")
         print("Server response:\n", response)
     except ConnectionRefusedError:
         print(f"Cannot connect to {HOST}:{PORT}")
@@ -65,7 +67,7 @@ def start_client():
             server_port = int(server_port)
             run_client(cmd, server_ip, server_port)
 
-        elif len(parts) == 4 and parts[0] == "QUERY":
+        elif len(parts) >= 4 and parts[0] == "QUERY":
             try:
                 qparts = shlex.split(cmd.strip())
             except ValueError:
@@ -89,6 +91,10 @@ def start_client():
                 "SEARCH_KEYWORD",
                 "COUNT_KEYWORD",
             }
+            if qtype == 'SEARCH_DATE':
+                print("working")
+                qvalue = " ".join(qparts[3:]).strip('"')
+                print(f"data = {qvalue}")
 
             try:
                 server_ip, server_port = target.rsplit(":", 1)
@@ -103,6 +109,9 @@ def start_client():
                     "Use SEARCH_DATE, SEARCH_HOST, SEARCH_DAEMON, SEARCH_SEVERITY, SEARCH_KEYWORD, or COUNT_KEYWORD."
                 )
                 continue
+
+     
+
 
             run_client(cmd, server_ip, server_port)
 
