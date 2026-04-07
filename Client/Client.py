@@ -42,9 +42,13 @@ def start_client():
 
         if len(parts) == 3 and parts[0] == "INGEST":
             server = parts[2]
-            server_ip, server_port = server.split(":")
-            server_port = int(server_port)
             file_path = parts[1]
+            try:
+                server_ip, server_port = server.split(":")
+                server_port = int(server_port)
+            except ValueError:
+                print("Invalid server format. Use <IP>:<PORT>")
+                continue   
 
             try:
                 with open(file_path, "r", encoding="utf-8", errors="replace") as f:
@@ -63,8 +67,12 @@ def start_client():
 
         elif len(parts) == 2 and parts[0] == "PURGE":
             server = parts[1]
-            server_ip, server_port = server.split(":")
-            server_port = int(server_port)
+            try:
+                server_ip, server_port = server.split(":")
+                server_port = int(server_port)
+            except ValueError:
+                print("Invalid server format. Use <IP>:<PORT>")
+                continue   
             run_client(cmd, server_ip, server_port)
 
         elif len(parts) >= 4 and parts[0] == "QUERY":
@@ -97,11 +105,11 @@ def start_client():
                 print(f"data = {qvalue}")
 
             try:
-                server_ip, server_port = target.rsplit(":", 1)
+                server_ip, server_port = server.split(":")
                 server_port = int(server_port)
             except ValueError:
-                print("Invalid target. Use <IP_or_DNS>:<Port>.")
-                continue
+                print("Invalid server format. Use <IP>:<PORT>")
+                continue   
 
             if qtype not in valid_qtypes:
                 print(
@@ -125,6 +133,9 @@ def start_client():
                 print("PURGE <SERVER_IP>:<SERVER_PORT>")
                 print("Usage: Deletes log files from the server")
                 print("================================================")
+                print("QUERY <SERVER_IP>:<SERVER_PORT> <SEARCH_DATE|SEARCH_HOST|SEARCH_DAEMON|SEARCH_SEVERITY|SEARCH_KEYWORD|COUNT_KEYWORD> <value>")
+                print("Usage: Query log files on the server")
+                print("================================================")
                 print("HELP")
                 print("Usage: Display all possible commands")
                 print("================================================")
@@ -136,6 +147,9 @@ def start_client():
         elif cmd == "EXIT":
             print("Closing Program")
             break
+
+        else:
+            print(f"Unknown command: {cmd}, type 'HELP' for available commands.")
         
 
 

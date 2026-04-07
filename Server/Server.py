@@ -68,25 +68,16 @@ def handle_client(conn, addr):
             cmd_parts = data.strip().split()
 
             if len(cmd_parts) == 0:
-                response = "Empty command"
+                response = "[ERROR] Empty command"
 
             else:
                 command = cmd_parts[0]
 
-                
-                if command == "ping":
-                    response = f"pong"
-
-                elif command == "exit":
-                    response = f"Goodbye!"
-                    conn.send(response.encode())
-                    break
-                
-
+                            
 ###################################################################
 # ingest call function
 ###################################################################
-                elif command == "INGEST":
+                if command == "INGEST":
                     
                     if not write_semaphore.acquire(blocking=False):
                         response = f"Server currently writing to memory, try again later. "
@@ -141,21 +132,22 @@ def handle_client(conn, addr):
 # function return section
 ###################################################################
                 else:
-                    response = f"Unknown command: {command}"
+                    response = f"Unknown command: {command}, type 'HELP' for available commands."
 
 
             try:
                 conn.send(response.encode())
             except OSError as e:
                 if getattr(e, "winerror", None) in (10053, 10054):
-                    print(f"[DISCONNECT] {addr}: {e}")
+                    print(f"[ABRUPT DISCONNECT] {addr}: {e}")
                     break
                 raise
 
 
-        except Exception as e:
-            print(f"[ERROR] {addr}: {e}")
+        except (ConnectionResetError, ConnectionAbortedError):
+            print(f"[ABRUPT DISCONNECT during recv] {addr}")
             break
+
 
     conn.close()
     print(f"[DISCONNECTED] {addr}")
@@ -182,6 +174,7 @@ def connection_handler(server):
 ###################################################################
 def start_server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind((HOST, PORT))
     server.listen(5)
 
@@ -193,15 +186,11 @@ def start_server():
     )
     accept_thread.start()
 
-   
-    while True:
-        # You can put admin commands or monitoring here
-        pass
 
 ###################################################################
 # server start call
 ###################################################################
-start_server()
+#start_server()
 
 ###################################################################
 # copypaste cli commands

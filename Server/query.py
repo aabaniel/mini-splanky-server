@@ -23,7 +23,7 @@ class SyslogEntry:
 ###################################################################
 # query function
 ###################################################################
-def query(data, syslog_entries, ts):
+def query(data, syslog_entries):
     try:
         qparts = shlex.split(data.strip())
     except ValueError:
@@ -48,10 +48,6 @@ def query(data, syslog_entries, ts):
             else:
                 def fmt_entry(e: SyslogEntry) -> str:
                     ts = e.timestamp.strftime("%b %d %H:%M:%S")
-                    
-                    print(needle+"\n\n")
-                    print(ts+"\n\n")
-
                     return f"{ts} {e.hostname} {e.daemon}: {e.message}"
 
                 matches = []
@@ -61,7 +57,6 @@ def query(data, syslog_entries, ts):
                     needle = qvalue.lower()
                     for e in syslog_entries:
                         ts = e.timestamp.strftime("%b %d %H:%M:%S").lower()
-                        print(f"DEBUG: Comparing '{needle}' to '{ts}'")
                         if needle in ts:
                             matches.append(e)
                     if matches:
@@ -80,7 +75,7 @@ def query(data, syslog_entries, ts):
                             for i, e in enumerate(matches[:top_n], 1):
                                 lines.append(f"{i}. {fmt_entry(e)}")
 
-                            lines.append("...")  # optional separator
+                            lines.append("...")  
 
                             
                             for i in range(total - bottom_n, total):
@@ -110,7 +105,7 @@ def query(data, syslog_entries, ts):
                             for i, e in enumerate(matches[:top_n], 1):
                                 lines.append(f"{i}. {fmt_entry(e)}")
 
-                            lines.append("...")  # optional separator
+                            lines.append("...")  
 
                             
                             for i in range(total - bottom_n, total):
@@ -140,7 +135,7 @@ def query(data, syslog_entries, ts):
                             for i, e in enumerate(matches[:top_n], 1):
                                 lines.append(f"{i}. {fmt_entry(e)}")
 
-                            lines.append("...")  # optional separator
+                            lines.append("...")  
 
                             
                             for i in range(total - bottom_n, total):
@@ -172,7 +167,7 @@ def query(data, syslog_entries, ts):
                             for i, e in enumerate(matches[:top_n], 1):
                                 lines.append(f"{i}. {fmt_entry(e)}")
 
-                            lines.append("...")  # optional separator
+                            lines.append("...")  
 
                             
                             for i in range(total - bottom_n, total):
@@ -183,7 +178,7 @@ def query(data, syslog_entries, ts):
                     else:
                         response = f"No matching entries found for severity '{sev}'."
 
-                        #https://www.tiktok.com/@purrito152/video/7595372803818294558?lang=en
+                   
 
                 elif qtype == "SEARCH_KEYWORD":
                     needle = qvalue.lower()
@@ -206,7 +201,7 @@ def query(data, syslog_entries, ts):
                             for i, e in enumerate(matches[:top_n], 1):
                                 lines.append(f"{i}. {fmt_entry(e)}")
 
-                            lines.append("...")  # optional separator
+                            lines.append("...")  
 
                             
                             for i in range(total - bottom_n, total):
