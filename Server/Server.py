@@ -33,8 +33,6 @@ class client:
 # initialization variables
 ###################################################################
 
-HOST = '0.0.0.0'
-PORT = 11017
 
 global syslog_entries 
 connected_ips = []
@@ -176,7 +174,7 @@ def connection_handler(server):
 ###################################################################
 # server initialization function
 ###################################################################
-def start_server():
+def start_server(HOST,PORT):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind((HOST, PORT))
