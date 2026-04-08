@@ -142,15 +142,14 @@ def handle_client(conn, addr):
                     response = "Server has no logs, QUERY cannot be done."
                     conn.send(response.encode())
                     break
-            except OSError as e:
-                if getattr(e, "winerror", None) in (10053, 10054):
-                    print(f"[ABRUPT DISCONNECT] {addr}: {e}")
+            except (ConnectionResetError, ConnectionAbortedError):
+                    print(f"[ABRUPT DISCONNECT] {addr}")
                     break
-                raise
+            raise
 
 
         except (ConnectionResetError, ConnectionAbortedError):
-            print(f"[ABRUPT DISCONNECT during recv] {addr}")
+            print(f"[ABRUPT DISCONNECT] {addr}")
             break
 
 
