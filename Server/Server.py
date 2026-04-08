@@ -61,7 +61,7 @@ def handle_client(conn, addr):
 
     while True:
         try:
-            data = conn.recv(1024).decode() # controls total data gathered
+            data = conn.recv(1024).decode() 
 
             if not data:
                 break

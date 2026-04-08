@@ -14,12 +14,10 @@ Erasing Data: PURGE <IP_or_DNS>:<Port>
 import socket
 import shlex
 
-def run_client(cmd, HOST, PORT, timeout=None):
+def run_client(cmd, HOST, PORT):
  
     try:
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if timeout is not None:
-            client.settimeout(timeout) 
         client.connect((HOST, PORT))
         client.send(cmd.encode())
         print("Connected to server, Server working...")
@@ -29,7 +27,7 @@ def run_client(cmd, HOST, PORT, timeout=None):
     except ConnectionRefusedError:
         print(f"Cannot connect to {HOST}:{PORT}")
     except socket.timeout:
-        print("[TIMEOUT] Server has been purged.")
+        print("[TIMEOUT] Server has no logs.")
     finally:
         client.close()
 
@@ -65,7 +63,7 @@ def start_client():
             # Send command header + full file content as one payload
             cmd = f"{cmd}\n{file_text}"
 
-            run_client(cmd, server_ip, server_port, timeout=None)
+            run_client(cmd, server_ip, server_port)
 
         elif len(parts) == 2 and parts[0] == "PURGE":
             server = parts[1]
@@ -75,7 +73,7 @@ def start_client():
             except ValueError:
                 print("Invalid server format. Use <IP>:<PORT>")
                 continue   
-            run_client(cmd, server_ip, server_port, timeout=None)
+            run_client(cmd, server_ip, server_port)
 
         elif len(parts) >= 4 and parts[0] == "QUERY":
             try:
@@ -123,7 +121,7 @@ def start_client():
      
 
 
-            run_client(cmd, server_ip, server_port, timeout=15)
+            run_client(cmd, server_ip, server_port)
 
 
         elif cmd == "HELP":
