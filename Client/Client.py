@@ -14,10 +14,12 @@ Erasing Data: PURGE <IP_or_DNS>:<Port>
 import socket
 import shlex
 
-def run_client(cmd, HOST, PORT):
+def run_client(cmd, HOST, PORT, timeout=None):
  
     try:
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if timeout is not None:
+            client.settimeout(timeout) 
         client.connect((HOST, PORT))
         client.send(cmd.encode())
         print("Connected to server, Server working...")
@@ -26,8 +28,8 @@ def run_client(cmd, HOST, PORT):
         print("Server response:\n", response)
     except ConnectionRefusedError:
         print(f"Cannot connect to {HOST}:{PORT}")
-    except OSError as e:
-        print(f"Socket error: {e}")
+    except socket.timeout:
+        print("[TIMEOUT] Server has been purged.")
     finally:
         client.close()
 
@@ -63,7 +65,7 @@ def start_client():
             # Send command header + full file content as one payload
             cmd = f"{cmd}\n{file_text}"
 
-            run_client(cmd, server_ip, server_port)
+            run_client(cmd, server_ip, server_port, timeout=None)
 
         elif len(parts) == 2 and parts[0] == "PURGE":
             server = parts[1]
@@ -73,7 +75,7 @@ def start_client():
             except ValueError:
                 print("Invalid server format. Use <IP>:<PORT>")
                 continue   
-            run_client(cmd, server_ip, server_port)
+            run_client(cmd, server_ip, server_port, timeout=None)
 
         elif len(parts) >= 4 and parts[0] == "QUERY":
             try:
@@ -89,7 +91,7 @@ def start_client():
                 )
                 continue
 
-            target = qparts[1]
+            server = qparts[1]
             qtype = qparts[2].upper()
             valid_qtypes = {
                 "SEARCH_DATE",
@@ -100,9 +102,9 @@ def start_client():
                 "COUNT_KEYWORD",
             }
             if qtype == 'SEARCH_DATE':
-                print("working")
+                #print("working")
                 qvalue = " ".join(qparts[3:]).strip('"')
-                print(f"data = {qvalue}")
+                #print(f"data = {qvalue}")
 
             try:
                 server_ip, server_port = server.split(":")
@@ -121,7 +123,7 @@ def start_client():
      
 
 
-            run_client(cmd, server_ip, server_port)
+            run_client(cmd, server_ip, server_port, timeout=15)
 
 
         elif cmd == "HELP":

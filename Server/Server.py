@@ -137,6 +137,11 @@ def handle_client(conn, addr):
 
             try:
                 conn.send(response.encode())
+            except AttributeError as e:
+                    print(f"[SERVER PURGED] Server has been purged, QUERY request from {addr}: {e} cannot be done.")
+                    response = "Server has no logs, QUERY cannot be done."
+                    conn.send(response.encode())
+                    break
             except OSError as e:
                 if getattr(e, "winerror", None) in (10053, 10054):
                     print(f"[ABRUPT DISCONNECT] {addr}: {e}")
