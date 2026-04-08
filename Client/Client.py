@@ -19,7 +19,7 @@ def run_client(cmd, HOST, PORT):
     try:
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client.connect((HOST, PORT))
-        client.send(cmd.encode())
+        client.sendall(cmd.encode())
         print("Connected to server, Server working...")
         response = client.recv(4096).decode()
         print("============================================================")
