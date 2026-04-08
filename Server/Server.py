@@ -200,5 +200,8 @@ def start_server():
 ###################################################################
 # copypaste cli commands
 ###################################################################
-#INGEST SVR1_server_auth_syslog.txt IP:11017
-#INGEST SVR2_server_auth_syslog.txt IP:11017
+#   INGEST SVR1_server_auth_syslog.txt 192.168.1.9:11017
+#   INGEST SVR2_server_auth_syslog.txt 192.168.1.9:11017
+#   INGEST CUDA_server_auth_syslog.txt 192.168.1.9:11017
+#   QUERY 192.168.1.9:11017 SEARCH_ 
+#   PURGE 192.168.1.9:11017 
